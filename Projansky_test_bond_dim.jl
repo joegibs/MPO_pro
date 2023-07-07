@@ -316,7 +316,7 @@ end
 
 decays=[]
 svns=[]
-n=4
+n=6
 # N = 6
 # cutoff = 1E-8
 steps = 50
@@ -327,11 +327,11 @@ state_bond = Vector{Float16}()
 density_bond = Vector{Float16}()
 for noise in noise_interval
     print(noise,"\n")
-    ab_dim = 0;
-    arho_bond = 0;
+    avg_bond_dim_mps = 0;
+    avg_bond_fim_mpo = 0;
     for trials in 1:trials
         svn,tri_mut,rho,sites =do_exp(n,steps,0.0,noise);
-        arho_bond = arho_bond + maximum(bond_dim_array(rho))
+        avg_bond_fim_mpo = avg_bond_fim_mpo + maximum(bond_dim_array(rho))
 
         Hitensor = ITensor(1.)
         for i = 1:n
@@ -347,15 +347,15 @@ for noise in noise_interval
             cutoff = 1E-8
             colm_tens=ITensor(ComplexF64,reshape(colm,[2 for i in 1:n]...),sites);
             colm_mps = MPS(colm_tens,sites;cutoff=cutoff);
-            ab_dim = ab_dim + maximum(bond_dim_array(colm_mps))
+            avg_bond_dim_mps = avg_bond_dim_mps + maximum(bond_dim_array(colm_mps))
         end
         #for high meas bond dim for the mps is low bond dim as expected pure state mpo which is expected because
         # i equivilant to each case, pure remains pure
     end
-    ab_dim = ab_dim / (trials*2^n)
-    arho_bond = arho_bond/trials
-    push!(state_bond, ab_dim)
-    push!(density_bond, arho_bond)
+    avg_bond_dim_mps = avg_bond_dim_mps / (trials*2^n)
+    avg_bond_fim_mpo = avg_bond_fim_mpo/trials
+    push!(state_bond, avg_bond_dim_mps)
+    push!(density_bond, avg_bond_fim_mpo)
 end
 
 plot(noise_interval,[state_bond,density_bond])
