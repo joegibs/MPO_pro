@@ -43,7 +43,7 @@ for i = 1:N
     Hitensor *= rho[i]
 end
 
-A=Array(Hitensor,s[1]',s[2]',s[3]',s[4]',s[5]',s[6]',s[7]',s[8]',s[1],s[2],s[3],s[4],s[5],s[6],s[7],s[8])
+A=Array(Hitensor,s[1]',s[2]',s[3]',s[4]',s[5]',s[6]',s[7]',s[8]',s[1],s[2],s[3],s[4],s[5],s[6],s[7],s[8]);
 display(reshape(A,256,256))
 
 
@@ -273,7 +273,7 @@ end
 
 decays=[]
 svns=[]
-n=6
+n=4
 # N = 6
 # cutoff = 1E-8
 steps = 50
@@ -298,11 +298,11 @@ display(reshape(A,64,64))
 F=svd(reshape(A,64,64))
 reshape(A,64,64) ≈ F.U * diagm(F.S) * F.Vt
 for projansk_iter in 1:64
-colm1 = F.U[:,projansk_iter]
+colm = F.U[:,projansk_iter]
 cutoff = 1E-8
-colmtens=ITensor(ComplexF64,reshape(colm1,2,2,2,2,2,2),sites)
-colmmps = MPS(colmtens,sites;cutoff=cutoff)
-print(bond_dim_array(colmmps),"\n")
+colm_tens=ITensor(ComplexF64,reshape(colm,2,2,2,2,2,2),sites)
+colm_mps = MPS(colm_tens,sites;cutoff=cutoff)
+print(bond_dim_array(colm_mps),"\n")
 end
 #for high meas bond dim for the mps is low bond dim as expected pure state mpo which is expected because
 # i equivilant to each case, pure remains pure
@@ -311,3 +311,50 @@ end
 #for no meas but low gives a high dim mpo and diagonalizing it yeilds high dim mps
 #this kinda says a low entangled density operator can be decompose into low entangled states
 # and high entangled density operators can be decomposed into high entangled states
+
+
+
+decays=[]
+svns=[]
+n=4
+# N = 6
+# cutoff = 1E-8
+steps = 50
+trials=50
+
+state_bond = Vector{Float16}()
+density_bond = Vector{Float16}()
+for noise in 0.2:0.01:0.3
+    print(noise,"\n")
+    ab_dim = 0;
+    arho_bond = 0;
+    for trials in 1:trials
+        svn,tri_mut,rho,sites =do_exp(n,steps,0.0,noise);
+        arho_bond = arho_bond + maximum(bond_dim_array(rho))
+
+        Hitensor = ITensor(1.)
+        for i = 1:n
+            Hitensor *= rho[i]
+        end
+
+        A=Array(Hitensor,sites', sites);
+        #check svd
+        F=svd(reshape(A,2^n,2^n))
+        reshape(A,2^n,2^n) ≈ F.U * diagm(F.S) * F.Vt
+        for projansk_iter in 1:2^n
+            colm = F.U[:,projansk_iter];
+            cutoff = 1E-8
+            colm_tens=ITensor(ComplexF64,reshape(colm,[2 for i in 1:n]...),sites);
+            colm_mps = MPS(colm_tens,sites;cutoff=cutoff);
+            ab_
+      dim = ab_
+      dim + maximum(bond_dim_array(colm_mps))
+        end
+        #for high meas bond dim for the mps is low bond dim as expected pure state mpo which is expected because
+        # i equivilant to each case, pure remains pure
+    end
+    ab_dim = ab_dim / (trials*2^n)
+    arho_bond = arho_bond/trials
+    push!(state_bond, ab_dim)
+    push!(density_bond, arho_bond)
+end
