@@ -321,10 +321,11 @@ n=4
 # cutoff = 1E-8
 steps = 50
 trials=50
+noise_interval=0.2:0.01:0.3
 
 state_bond = Vector{Float16}()
 density_bond = Vector{Float16}()
-for noise in 0.2:0.01:0.3
+for noise in noise_interval
     print(noise,"\n")
     ab_dim = 0;
     arho_bond = 0;
@@ -346,9 +347,7 @@ for noise in 0.2:0.01:0.3
             cutoff = 1E-8
             colm_tens=ITensor(ComplexF64,reshape(colm,[2 for i in 1:n]...),sites);
             colm_mps = MPS(colm_tens,sites;cutoff=cutoff);
-            ab_
-      dim = ab_
-      dim + maximum(bond_dim_array(colm_mps))
+            ab_dim = ab_dim + maximum(bond_dim_array(colm_mps))
         end
         #for high meas bond dim for the mps is low bond dim as expected pure state mpo which is expected because
         # i equivilant to each case, pure remains pure
@@ -358,3 +357,5 @@ for noise in 0.2:0.01:0.3
     push!(state_bond, ab_dim)
     push!(density_bond, arho_bond)
 end
+
+plot(noise_interval,[state_bond,density_bond])
