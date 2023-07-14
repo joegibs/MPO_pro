@@ -1,50 +1,40 @@
-function bond_dim_array(rho)
-    arr=[]
-    for i in rho
-        for j in inds(i)
-            if occursin("Link",string(tags(j)))
-                push!(arr,dim(j))
-            end
-        end
-    end
-    return arr
-end
 
-N=8
-s = siteinds("Qubit", N)
-psi1 = productMPS(s, "Up" )
-rho = outer(psi1',psi1)
-gates = ITensor[]
 
-h = op("H",[s[1]])
-h1 = op("H",[s[3]])
-h2 = op("H",[s[5]])
-h3 = op("H",[s[7]])
-push!(gates, h)
-push!(gates, h1)
-push!(gates, h2)
-push!(gates, h3)
-h = op("CNOT",[s[1],s[2]])
-h1 = op("CNOT",[s[3],s[4]])
-h2 = op("CNOT",[s[5],s[6]])
-h3 = op("CNOT",[s[7],s[8]])
-push!(gates, h)
-push!(gates, h1)
-push!(gates, h2)
-push!(gates, h3)
+# N=8
+# s = siteinds("Qubit", N)
+# psi1 = productMPS(s, "Up" )
+# rho = outer(psi1',psi1)
+# gates = ITensor[]
 
-cutoff = 1E-8
+# h = op("H",[s[1]])
+# h1 = op("H",[s[3]])
+# h2 = op("H",[s[5]])
+# h3 = op("H",[s[7]])
+# push!(gates, h)
+# push!(gates, h1)
+# push!(gates, h2)
+# push!(gates, h3)
+# h = op("CNOT",[s[1],s[2]])
+# h1 = op("CNOT",[s[3],s[4]])
+# h2 = op("CNOT",[s[5],s[6]])
+# h3 = op("CNOT",[s[7],s[8]])
+# push!(gates, h)
+# push!(gates, h1)
+# push!(gates, h2)
+# push!(gates, h3)
 
-rho = apply(gates, rho; apply_dag=true)
-psi = apply(gates,psi1)
+# cutoff = 1E-8
 
-Hitensor = ITensor(1.)
-for i = 1:N
-    Hitensor *= rho[i]
-end
+# rho = apply(gates, rho; apply_dag=true)
+# psi = apply(gates,psi1)
 
-A=Array(Hitensor,s[1]',s[2]',s[3]',s[4]',s[5]',s[6]',s[7]',s[8]',s[1],s[2],s[3],s[4],s[5],s[6],s[7],s[8]);
-display(reshape(A,256,256))
+# Hitensor = ITensor(1.)
+# for i = 1:N
+#     Hitensor *= rho[i]
+# end
+
+# A=Array(Hitensor,s[1]',s[2]',s[3]',s[4]',s[5]',s[6]',s[7]',s[8]',s[1],s[2],s[3],s[4],s[5],s[6],s[7],s[8]);
+# display(reshape(A,256,256))
 
 
 
@@ -53,11 +43,23 @@ display(reshape(A,256,256))
 
 using ITensors
 using Random
-using Plots
+# using Plots
 using Statistics
 using LaTeXStrings
 using LinearAlgebra
 using PyCall
+
+function bond_dim_array(rho)
+  arr=[]
+  for i in rho
+      for j in inds(i)
+          if occursin("Link",string(tags(j)))
+              push!(arr,dim(j))
+          end
+      end
+  end
+  return arr
+end
 
 function rho_to_dense(rho,s)
   Hitensor = ITensor(1.)
@@ -204,7 +206,7 @@ function samp_mps(rho,s,samp_row)
   cutoff = 1E-8
   N = length(rho)
   samp =deepcopy(rho)
-  samp = samp/tr(samp)
+  samp = samp
   samples= sample(samp)
   magz = [x == 1 ? "Pup" : "Pdn" for x in samples]
 
@@ -271,39 +273,40 @@ function do_exp(N,steps,meas_p,noise)
 end
 
 
-decays=[]
-svns=[]
-n=4
-# N = 6
-# cutoff = 1E-8
-steps = 50
+# decays=[]
+# svns=[]
+# n=4
+# # N = 6
+# # cutoff = 1E-8
+# steps = 50
 
 
-svn,tri_mut,rho,sites =do_exp(n,steps,0.0,0.1);
-print(bond_dim_array(rho))
+# svn,tri_mut,rho,sites =do_exp(n,steps,0,0.3);
+# print(bond_dim_array(rho))
 
+# kjh
 #checked 0 meas 0 noise, say cannonizaation scaling d^2^n as kinda expected and happy to see ☑
 #checked 1 meas 0 noise , all dim 1 links as expected ☑
 #checked 0.5 meas 0 noise some growth in bond dim but not much ☑
 #check 0 meas variable noise see a critical value around 0.23 ☑
 
-Hitensor = ITensor(1.)
-for i = 1:n
-    Hitensor *= rho[i]
-end
+# Hitensor = ITensor(1.)
+# for i = 1:n
+#     Hitensor *= rho[i]
+# end
 
-A=Array(Hitensor,sites[1]',sites[2]',sites[3]',sites[4]',sites[5]',sites[6]',sites[1],sites[2],sites[3],sites[4],sites[5],sites[6]);
-display(reshape(A,64,64))
-#check svd
-F=svd(reshape(A,64,64))
-reshape(A,64,64) ≈ F.U * diagm(F.S) * F.Vt
-for projansk_iter in 1:64
-colm = F.U[:,projansk_iter]
-cutoff = 1E-8
-colm_tens=ITensor(ComplexF64,reshape(colm,2,2,2,2,2,2),sites)
-colm_mps = MPS(colm_tens,sites;cutoff=cutoff)
-print(bond_dim_array(colm_mps),"\n")
-end
+# A=Array(Hitensor,sites[1]',sites[2]',sites[3]',sites[4]',sites[5]',sites[6]',sites[1],sites[2],sites[3],sites[4],sites[5],sites[6]);
+# display(reshape(A,64,64))
+# #check svd
+# F=svd(reshape(A,64,64))
+# reshape(A,64,64) ≈ F.U * diagm(F.S) * F.Vt
+# for projansk_iter in 1:64
+# colm = F.U[:,projansk_iter]
+# cutoff = 1E-8
+# colm_tens=ITensor(ComplexF64,reshape(colm,2,2,2,2,2,2),sites)
+# colm_mps = MPS(colm_tens,sites;cutoff=cutoff)
+# print(bond_dim_array(colm_mps),"\n")
+# end
 #for high meas bond dim for the mps is low bond dim as expected pure state mpo which is expected because
 # i equivilant to each case, pure remains pure
 
@@ -313,26 +316,25 @@ end
 # and high entangled density operators can be decomposed into high entangled states
 
 
-
+# function main()
 decays=[]
 svns=[]
-n=6
-# N = 6
-# cutoff = 1E-8
+n=4
 steps = 50
-trials=50
-noise_interval=0.2:0.01:0.3
+trials=5
+noise_interval=0.0:0.1:.4
+meas_interval=0:0.25:1
 
 state_bond = Vector{Float16}()
 density_bond = Vector{Float16}()
+for meas in meas_interval 
 for noise in noise_interval
-    print(noise,"\n")
+    print(meas," ",noise,"\n")
     avg_bond_dim_mps = 0;
     avg_bond_fim_mpo = 0;
     for trials in 1:trials
-        svn,tri_mut,rho,sites =do_exp(n,steps,0.0,noise);
+        svn,tri_mut,rho,sites =do_exp(n,steps,meas,noise);
         avg_bond_fim_mpo = avg_bond_fim_mpo + maximum(bond_dim_array(rho))
-
         Hitensor = ITensor(1.)
         for i = 1:n
             Hitensor *= rho[i]
@@ -352,10 +354,26 @@ for noise in noise_interval
         #for high meas bond dim for the mps is low bond dim as expected pure state mpo which is expected because
         # i equivilant to each case, pure remains pure
     end
+
     avg_bond_dim_mps = avg_bond_dim_mps / (trials*2^n)
     avg_bond_fim_mpo = avg_bond_fim_mpo/trials
     push!(state_bond, avg_bond_dim_mps)
     push!(density_bond, avg_bond_fim_mpo)
 end
+end
 
-plot(noise_interval,[state_bond,density_bond])
+# plot(noise_interval,[state_bond,density_bond])
+# plot(noise_interval,[state_bond[12:22],density_bond[12:22]])
+
+# a=surface(meas_interval,noise_interval,reshape(density_bond,length(noise_interval),length(meas_interval)))
+# # surface(noise_interval,meas_interval,state_bond)
+# b=plot(heatmap(meas_interval,noise_interval,reshape(density_bond,length(noise_interval),length(meas_interval))))
+# display(b)
+# end
+
+function plot_test()
+  x = y = 0:0.1:10
+  f(x, y) = sin(x) + cos(y)
+  z = f.(x', y)
+  surface(x, y, z)
+end
