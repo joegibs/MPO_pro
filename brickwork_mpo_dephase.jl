@@ -231,7 +231,7 @@ function do_trials(N,steps,meas_p,trials,noise)
   return svn_trials,tri_trials
 end
 
-function main(meas_ps=[0.05:0.2:1...],trials=10,noise=0.0)
+function main(meas_ps=[0.05:0.4:1...],trials=10,noise=0.0)
   decays=[]
   svns=[]
   for n in [4]

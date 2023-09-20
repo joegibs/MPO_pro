@@ -206,7 +206,7 @@ function samp_mps(rho,s,samp_row)
   cutoff = 1E-8
   N = length(rho)
   samp =deepcopy(rho)
-  samp = samp
+  samp = samp/tr(samp)
   samples= sample(samp)
   magz = [x == 1 ? "Pup" : "Pdn" for x in samples]
 
@@ -275,14 +275,14 @@ end
 
 # decays=[]
 # svns=[]
-# n=4
+n=4
 # # N = 6
 # # cutoff = 1E-8
-# steps = 50
+steps = 50
 
 
-# svn,tri_mut,rho,sites =do_exp(n,steps,0,0.3);
-# print(bond_dim_array(rho))
+svn,tri_mut,rho,sites =do_exp(n,steps,0.1,0.3);
+print(bond_dim_array(rho))
 
 # kjh
 #checked 0 meas 0 noise, say cannonizaation scaling d^2^n as kinda expected and happy to see ☑

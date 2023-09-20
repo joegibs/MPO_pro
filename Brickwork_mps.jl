@@ -50,6 +50,7 @@ function rec_ent(psi,b,s)
         SvN -= p * log2(p)
       end
     end
+    @show(diag(S).^2)
     return SvN
 end
 
@@ -286,6 +287,7 @@ function rec_ent_mpo(rho,b,s)
    
       # @show T
       _,S,_ = svd(T,s)#[inds(T)[i] for i = 1:2:length(inds(T))])
+      @show(diag(S))
       SvN = 0.0
       for n in 1:dim(S, 1)
         p = S[n,n]

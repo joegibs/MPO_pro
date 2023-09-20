@@ -28,7 +28,7 @@ function rec_ent(rho,b,s)
     SvN = 0.0
     @show S
     for n in 1:dim(S, 1)
-      p = S[n,n]^2
+      p = S[n,n]
       if p != 0
         SvN -= p * log2(p)
       end
@@ -191,116 +191,6 @@ function rec_ent_mps(psi,b)
   return SvN
 end
 
-##############################3333
-N=4
-s = siteinds("Qubit", N)
-psi1 = productMPS(s, "Up" )
-rho = outer(psi1',psi1)
-gates = ITensor[]
-
-s1 = s[2]
-s2 = s[3]
-hj = op("RandomUnitary",[s1,s2])
-push!(gates, hj)
-
-cutoff = 1E-8
-
-rho = apply(gates, rho; apply_dag=true)
-psi = apply(gates,psi1)
-# rho = apply(rho, rho; cutoff)
-
-rec_ent(rho,2)
-split_ren(rho,2)
-rec_ent_mps(psi,2)
-
-rho2 = outer(psi',psi)
-
-rec_ent(rho2,2)
-rec_ent_mps(rho2,2)
-
-psi2=randomMPS(s)
-rec_ent_mps(psi2,2)
-rho2=outer(psi2',psi2)
-rec_ent(rho2,2)
-
-
-b=2
-n = length(rho)
-rho_temp = deepcopy(rho)
-s = siteinds("Qubit",n) 
-
-#contract half   x x x x | | | |
-L = ITensor(1.0)
-for i = 1:b
-  L *= tr(rho_temp[i])
-end
-# absorb
-rho_temp[b+1] *= L
-# no longer a proper mpo
-M =MPO(n-b)
-for i in 1:(n-b)
-    M[i]=rho_temp[b+i]
-end
-M=M/tr(M)
--log2(tr(apply(M,M)))
-
-n = length(rho)
-
-rho
-# Each MPO has site indices `(i, o, i', o')` where `i = Index(2, "Site, n=j, Input")` and `o = Index(2, "Site, n=j, Output")`
-
-# b=2
-# # orthogonalize!(rho,b)
-# rho_temp = deepcopy(rho)
-# s = siteinds("Qubit",n) 
-
-# #contract half   x x x x | | | |
-# L = ITensor(1.0)
-# for i = 1:b
-#   L *= tr(rho_temp[i])
-# end
-# L
-# # absorb
-# rho_temp[b+1] *= L
-# # no longer a proper mpo
-# M =MPO(n-b)
-# for i in 1:(n-b)
-#     M[i]=rho_temp[b+i]
-# end
-# #turn this mpo into a single tensor
-# T = prod(M)
-# ###
-# C = combiner(inds(T)[1],inds(T)[3])
-# C2 = combiner(inds(T)[2],inds(T)[4])
-# test_ten=(C2*(C*T))
-
-# # @show T
-# # s = siteinds("Qubit",n-b) 
-
-# U,S,V = svd(T,[inds(T)[i] for i = 1:2:length(inds(T))])
-# SvN = 0.0
-# for n in 1:dim(S, 1)
-#   p = S[n,n]^2
-#   if p != 0
-#     SvN -= p * log2(p)
-#   end
-# end
-# return SvN
-
-
-# s = siteinds(rho)  
-# orthogonalize!(rho, b)
-# _,S,_ = svd(rho[b], (linkind(rho, b-1), s[b]))
-# SvN = 0.0
-# for n in 1:dim(S, 1)
-#   p = S[n,n]^2
-#   if p != 0
-#     SvN -= p * log2(p)
-#   end
-# end
-# return SvN
-# end
-
 
 
 # psi=deepcopy(rho)
@@ -432,3 +322,94 @@ p1 = op("Rz2",s1,θ=2)
 gates = ITensor[]
 push!(gates, p1)
 
+################## partial transpose ##################33
+
+N = 2
+sites = siteinds("Qubit",N)
+psi1 = productMPS(sites, "Up" )
+rho = outer(psi1',psi1)
+
+gates = ITensor[]
+
+s1 = sites[1]
+s2 = sites[2]
+hj = op("H",s1)
+push!(gates, hj)
+hj = op("CNOT",[s1,s2])
+push!(gates, hj)
+
+cutoff = 1E-8
+
+rho = apply(gates, rho; apply_dag=true)
+# rho = kraus_dephase(rho,sites,0.3)
+
+function partial_transpose(A::MPO, sites)
+  A = copy(A)
+  for n in sites
+    A[n] = swapinds(A[n], siteinds(A, n)...)
+  end
+  return A
+end
+
+rhot = partial_transpose(rho,1)
+norm(rhot)
+
+function log_negativity(A::MPO,sites)
+  Apt=partial_transpose(A,sites)
+  ϵ = sqrt()
+  return ϵ
+end
+
+
+log_negativity(rho,1:2,1)
+rec_ent(rho,2,sites)
+
+function rho_to_dense(rho,s)
+  Hitensor = ITensor(1.)
+  N = length(s)
+  for i = 1:N
+      Hitensor *= rho[i]
+  end
+
+  A=Array(Hitensor,prime(s),s)
+  return reshape(A,2^N,2^N)
+end
+function kraus_dephase(rho,s,p)
+  #define the two operators
+  #(1-p)ρ + pZρZ
+  N=length(rho)
+  gates = ITensor[]
+  for i in 1:N
+    hj = op("Z", s[i])
+    push!(gates, hj)
+  end
+  #apply the operators
+  rho = (1-p)*rho + p*apply(gates,rho;apply_dag=true)
+  return rho/tr(rho)
+end
+
+N = 2
+sites = siteinds("Qubit",N)
+psi1 = productMPS(sites, "Up" )
+rho = outer(psi1',psi1)
+
+gates = ITensor[]
+
+s1 = sites[1]
+s2 = sites[2]
+hj = op("H",s1)
+push!(gates, hj)
+hj = op("Rand",[s1,s2])
+push!(gates, hj)
+
+cutoff = 1E-8
+
+rho = apply(gates, rho; apply_dag=true)
+rho_to_dense(rho,sites)
+rhot=kraus_dephase(rho,sites,0.5)
+rho_to_dense(rhot,sites)
+A=partial_transpose(rho,2)
+
+
+log_negativity(rho,1,2)
+log_negativity(rhot,1,2)
